@@ -5,11 +5,15 @@ library(lattice)
 library(dplyr)
 
 
-# Leaflet bindings are a bit slow; for now we'll just sample to compensate
-allcity <- allcity_unique
 
+# Leaflet bindings are a bit slow; for now we'll just sample to compensate
+allcity <- allcity
 # By ordering by centile, we ensure that the (comparatively rare) SuperZIPs
 # will be drawn last and thus be easier to see
+#
+
+
+
 
 function(input, output, session) {
   
@@ -17,7 +21,7 @@ function(input, output, session) {
   
   # Create the map
   output$map <- renderLeaflet({
-    leaflet() %>%
+    leaflet(allcity) %>%
       addTiles(
         urlTemplate = "//{s}.tiles.mapbox.com/v3/jcheng.map-5ebohr46/{z}/{x}/{y}.png",
         attribution = 'Maps by <a href="http://www.mapbox.com/">Mapbox</a>'
@@ -68,9 +72,10 @@ function(input, output, session) {
     }
     
     leafletProxy("map", data = allcity) %>%
-      clearShapes() %>%
-      addCircles(lng=~latitude, lat=~longitude, radius=3000, layerId=~City_name,
-                 stroke=FALSE, fillOpacity=0.4, fillColor=pal(colorData)) %>%
+      addPolygons(stroke = FALSE, smoothFactor = 0.3, fillOpacity = 1,
+                  fillColor =pal(colorData)) %>%
+        #addCircles(lng=~latitude, lat=~longitude, radius=3000, layerId=~City_name,
+        #           stroke=FALSE, fillOpacity=0.4, fillColor=pal(colorData)) %>%
       addLegend("bottomleft", pal=pal, values=colorData, title=colorBy,
                 layerId="colorLegend")
   })
