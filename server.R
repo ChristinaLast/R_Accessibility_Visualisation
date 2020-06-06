@@ -50,7 +50,7 @@ function(input, output, session) {
   
   output$scatterTransit <- renderPlot({
     # If no zipcodes are in view, don't plot
-    print(xyplot(Tot_r_20 ~ pct_transi, data = allcity, xlim = range(allcity$pct_transi), ylim = range(allcity$Tot_r_20)))
+    print(xyplot(allcity$Tot_r_20 ~ allcity$pct_transi, data = allcity, xlim = range(allcity$pct_transi), ylim = range(allcity$Tot_r_20)))
   })
   
   # This observer is responsible for maintaining the circles and legend,
@@ -73,40 +73,14 @@ function(input, output, session) {
     
     leafletProxy("map", data = allcity) %>%
       addPolygons(stroke = FALSE, smoothFactor = 0.3, fillOpacity = 1,
-                  fillColor =pal(colorData)) %>%
+                  fillColor =pal(colorData),
+                  label = ~paste0(allcity[['City_name']], ": ", formatC(colorData, big.mark = ","))) %>%
         #addCircles(lng=~latitude, lat=~longitude, radius=3000, layerId=~City_name,
         #           stroke=FALSE, fillOpacity=0.4, fillColor=pal(colorData)) %>%
       addLegend("bottomleft", pal=pal, values=colorData, title=colorBy,
                 layerId="colorLegend")
   })
-  
-  # Show a popup at the given location
-  showCityPopup <- function(allcity, lat, lng) {
-    selectedCity <- allcity[allcity$City_name == City_name,]
-    content <- as.character(tagList(
-      tags$h4("Accessibility:", as.integer(selectedCity$Tot_r_20)),
-      tags$strong(HTML(sprintf("%s, %s",
-                               selectedCity$City_name, selectedCity$kind
-      ))), tags$br(),
-      sprintf("Percent of income as household and transport cost: %s%%", as.character(selectedCity$HH_Trans_cost_perc_income_seg)), tags$br(),
-      sprintf("Accessibility to jobs at the 20 minute travel time is: %s", as.character(selectedCity$Total_Accessibility_20_seg)), tags$br(),
-      sprintf("Hispanic population: %s", selectedCity$Hispanic)
-    ))
-    leafletProxy("map") %>% addPopups(lng, lat, content, layerId = City_name)
-  }
-  
-  # When map is clicked, show a popup with city info
-  observe({
-    leafletProxy("map") %>% clearPopups()
-    event <- input$map_shape_click
-    if (is.null(event))
-      return()
-    
-    isolate({
-      showCityPopup(event$id, event$lng, event$lat)
-    })
-  })
-  
+
   
   ## Data Explorer ###########################################
   
