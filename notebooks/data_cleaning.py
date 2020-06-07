@@ -2,9 +2,6 @@
 import pandas as pd
 import numpy as np
 import isort
-
-
-
 from shapely import wkt
 from shapely.geometry import MultiPolygon, shape
 import geopandas as gpd
@@ -58,12 +55,15 @@ def get_data():
     all_data_block = pd.read_csv(data_path + 'Spatial_weights_pred.csv')
     # Getting spatial data for LA cities
     all_lat_lon = pd.read_csv(data_path + 'la_neighborhoods.csv')
-
     all_lat_lon['the_geom'] = all_lat_lon['the_geom'].apply(wkt.loads)
     all_lat_lon = gpd.GeoDataFrame(all_lat_lon, geometry="the_geom")
 
+    # Reformatting LA city name
+    all_data_block['COMMNAME'] = all_data_block['COMMNAME'].map(lambda x: x.lstrip('City of '))
+    all_data_block['COMMNAME'] = all_data_block['COMMNAME'].map(lambda x: x.lstrip('Unincorporated - '))
+    all_data_city = all_data_block.merge(all_lat_lon, left_on='COMMNAME', right_on="name")
     # Dropping unnecessary columns
-    all_data_city = all_data_block.drop(['Unnamed: 0','CB10','OBJECTID_1','GEOID10','CTCB10','BG10','X_CENTER','Y_CENTER','Shape_Leng','Shape_Area','BlockId','BlockgroupId','TractId'], axis=1)
+    all_data_city = all_data_city.drop(['Unnamed: 0','CB10','OBJECTID_1','GEOID10','CTCB10','BG10','X_CENTER','Y_CENTER','Shape_Leng','Shape_Area','BlockId','BlockgroupId','TractId'], axis=1)
     #Groupby LA cities and mean numerican values
     all_data_city_mean = all_data_city.groupby('COMMNAME').mean().reset_index().drop(['Black_Afri','Hispanic','White_Alon'],axis=1)
     #total sum of ethnicity at the city level
@@ -72,9 +72,7 @@ def get_data():
     #merging averaged and totalled dataframes on LA city
     all_data_city = all_data_city_mean.merge(all_data_ethnicity_sum, on='COMMNAME')
     all_data_city = all_data_city.reset_index(drop=True)
-    # Reformatting LA city name
-    all_data_city['COMMNAME'] = all_data_city['COMMNAME'].map(lambda x: x.lstrip('City of '))
-    all_data_city['COMMNAME'] = all_data_city['COMMNAME'].map(lambda x: x.lstrip('Unincorporated - '))
+
     #selecting subset of columns
     all_data_city = all_data_city[['COMMNAME','Tot_r_10','Tot_r_20','Tot_r_50','ht_ami', 'population', 'co2_per_hh', 'autos_per_', 'pct_transi', 'res_densit', 'emp_gravit','emp_ndx','h_cost','Black_Afri','Hispanic','White_Alon']]
     #integer conversion
@@ -84,11 +82,10 @@ def get_data():
     all_data_city['Tot_r_20_seg'] = all_data_city['Tot_r_20'].apply(lambda Tot_r_20: get_accessibility_segment(Tot_r_20))
     all_data_city['ht_ami_seg'] = all_data_city['ht_ami'].apply(lambda ht_ami: get_ht_ami_segment(ht_ami))
     # Merging with the spatial data
-    all_data_city = all_data_city.merge(all_lat_lon, left_on='COMMNAME', right_on="name")
     all_data_city.to_csv(data_path+'all_data_city.csv')
     #Creating geojson with spatial data activated as geometry
     all_data_city['the_geom'] = all_data_city['the_geom'].apply(wkt.loads)
-    all_data_city_gdf = gpd.GeoDataFrame(LA_county_csv, geometry="the_geom")
+    all_data_city_gdf = gpd.GeoDataFrame(all_data_city, geometry="the_geom")
     # dropping duplicate cities
     all_data_city_gdf = all_data_city_gdf.drop_duplicates(subset='COMMNAME', keep="first")
     all_data_city_gdf['City_name'] = all_data_city_gdf['COMMNAME']
