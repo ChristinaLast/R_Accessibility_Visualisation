@@ -8,6 +8,11 @@ library(dplyr)
 
 # Leaflet bindings are a bit slow; for now we'll just sample to compensate
 allcity <- allcity
+#removing the spatial data for data explorer
+cols_to_keep = c('City_name', 'Tot_r_10', 'Tot_r_20', 'Tot_r_50', 'ht_ami', 'population', 'co2_per_hh', 'autos_per_', 'pct_transi', 'res_densit', 'h_cost', 'Black_Afri', 'Hispanic', 'White_Alon', 'Tot_r_20_seg', 'ht_ami_seg','kind', 'sqmi', 'latitude', 'longitude')
+allcity_nogeom <- allcity[cols_to_keep]
+allcity_nogeom <- as.data.frame(allcity_nogeom)
+
 # By ordering by centile, we ensure that the (comparatively rare) SuperZIPs
 # will be drawn last and thus be easier to see
 #
@@ -50,7 +55,8 @@ function(input, output, session) {
   
   output$scatterTransit <- renderPlot({
     # If no zipcodes are in view, don't plot
-    print(xyplot(allcity$Tot_r_20 ~ allcity$pct_transi, data = allcity, xlim = range(allcity$pct_transi), ylim = range(allcity$Tot_r_20)))
+    print(xyplot(allcity$Tot_r_20 ~ allcity$pct_transi, data = allcity, xlim = range(allcity$pct_transi), ylim = range(allcity$Tot_r_20), xlab="Total 20min Accessibility", ylab="Percentage (%) using transit"))
+  
   })
   
   # This observer is responsible for maintaining the circles and legend,
@@ -58,12 +64,12 @@ function(input, output, session) {
   observe({
     colorBy <- input$color
 
-    if (colorBy == "Total_Accessibility_20_seg") {
+    if (colorBy == "Tot_r_20_seg") {
       # Color and palette are treated specially in the "superzip" case, because
       # the values are categorical instead of continuous.
       colorData <- allcity[[colorBy]]
       pal <- colorFactor("viridis", colorData)
-    } else if (colorBy == "HH_Trans_cost_perc_income_seg") {
+    } else if (colorBy == "ht_ami_seg") {
       colorData <- allcity[[colorBy]]
       pal <- colorFactor("viridis", colorData)
     } else {
@@ -86,7 +92,7 @@ function(input, output, session) {
   
   observe({
     cities <- if (is.null(input$kind)) character(0) else {
-      filter(cleantable, kind %in% input$kind) %>%
+      filter(allcity_nogeom, kind %in% input$kind) %>%
         `$`('City') %>%
         unique() %>%
         sort()
@@ -102,25 +108,21 @@ function(input, output, session) {
       return()
     isolate({
       map <- leafletProxy("map")
-      map %>% clearPopups()
       dist <- 0.5
-      city <- input$goto$city
-      lat <- input$goto$lat
-      lng <- input$goto$lng
-      showCityPopup(city, lat, lng)
+      lat <- input$goto$latitude
+      lng <- input$goto$longitude
       map %>% fitBounds(lng - dist, lat - dist, lng + dist, lat + dist)
     })
   })
   
   output$citytable <- DT::renderDataTable({
-    df <- cleantable %>%
+    df <- allcity_nogeom %>%
       filter(
-        Score >= input$minScore,
-        Score <= input$maxScore,
-        is.null(input$kind) | State %in% input$kind,
-        is.null(input$City_name) | City %in% input$City_name
+        Tot_r_20 >= input$minTot_r_20,
+        Tot_r_20 <= input$maxTot_r_20,
+        is.null(input$City_name) | City_name %in% input$City_name
       ) %>%
-      mutate(Action = paste('<a class="go-map" href="" data-lat="', Lat, '" data-long="', Long, '" data-city="', City_name, '"><i class="fa fa-crosshairs"></i></a>', sep=""))
+      mutate(Action = paste('<a class="go-map" href="" data-lat="', latitude, '" data-long="', longitude, '" data-city="', City_name, '"><i class="fa fa-crosshairs"></i></a>', sep=""))
     action <- DT::dataTableAjax(session, df, outputId = "citytable")
     
     DT::datatable(df, options = list(ajax = list(url = action)), escape = FALSE)

@@ -5,8 +5,8 @@ vars <- c(
   "Total 20 minute accessibility" = "Tot_r_20",
   "Hispanic" = "Hispanic",
   "Population" = "population",
-  "Total 20 minute accessibility segment"= "Total_Accessibility_20_seg",
-  "Household and transport cost as percentage of interest"= "HH_Trans_cost_perc_income_seg"
+  "Total 20 minute accessibility segment"= "Tot_r_20_seg",
+  "Household and transport cost as percentage of interest"= "ht_ami_seg"
 )
 
 
@@ -45,21 +45,16 @@ navbarPage("Los Angeles County", id="nav",
            
            tabPanel("Data explorer",
                     fluidRow(
-                      column(3,
-                             selectInput("states", "States", c("All states"="", structure(state.abb, names=state.name), "Washington, DC"="DC"), multiple=TRUE)
-                      ),
-                      column(3,
-                             conditionalPanel("input.states",
-                                              selectInput("cities", "Cities", c("All cities"=""), multiple=TRUE)
-                             )
+                      column(1,
+                             selectInput("cities", "Cities", c("All cities"=""), multiple=TRUE)
                       )
                     ),
                     fluidRow(
                       column(1,
-                             numericInput("minScore", "Min score", min=0, max=100, value=0)
+                             numericInput("minTot_r_20", "Min accessibility", min=0, max=100, value=0)
                       ),
                       column(1,
-                             numericInput("maxScore", "Max score", min=0, max=100, value=100)
+                             numericInput("maxTot_r_20", "Max accessibility", min=0, max=100, value=100)
                       )
                     ),
                     hr(),

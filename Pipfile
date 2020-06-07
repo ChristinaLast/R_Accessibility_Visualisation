@@ -1,0 +1,22 @@
+
+[dev-packages]
+flake8 = "*"
+ipykernel = "*"
+
+[packages]
+python-dotenv = "*"
+numpy = "*"
+pylama = "*"
+bandit = "*"
+pylint = "*"
+pbr = "*"
+black = "*"
+pandas = "*"
+geopandas = "*"
+shapely = "*"
+
+[requires]
+python_version = "3.7"
+
+[pipenv]
+allow_prereleases = true
