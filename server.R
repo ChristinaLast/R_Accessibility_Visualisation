@@ -48,14 +48,13 @@ function(input, output, session) {
          breaks = tot20Breaks,
          main = "City level Accessibility (no. of jobs)",
          xlab = "Percentile",
-         xlim = range(allcity$Tot_r_20),
          col = '#00DD00',
          border = 'white')
   })
   
   output$scatterTransit <- renderPlot({
     # If no zipcodes are in view, don't plot
-    print(xyplot(allcity$Tot_r_20 ~ allcity$pct_transi, data = allcity, xlim = range(allcity$pct_transi), ylim = range(allcity$Tot_r_20), xlab="Total 20min Accessibility", ylab="Percentage (%) using transit"))
+    print(xyplot(allcity$Tot_r_20 ~ allcity$pct_transi, data = allcity, xlim = range(allcity$pct_transi), ylim = range(allcity$Tot_r_20), xlab="Percentage (%) using transit", ylab="Jobs accessible 20mins"))
   
   })
   
@@ -80,14 +79,15 @@ function(input, output, session) {
     leafletProxy("map", data = allcity) %>%
       addPolygons(stroke = FALSE, smoothFactor = 0.3, fillOpacity = 1,
                   fillColor =pal(colorData),
-                  label = ~paste0(allcity[['City_name']], ": ", formatC(colorData, big.mark = ","))) %>%
-        #addCircles(lng=~latitude, lat=~longitude, radius=3000, layerId=~City_name,
-        #           stroke=FALSE, fillOpacity=0.4, fillColor=pal(colorData)) %>%
+                  popup = ~paste("<b>City: </b>", allcity[['City_name']],"<br/>",
+                                 "<b>Population: </b>", allcity[['population']],"<br/>",
+                                 "<b>Total jobs accessible (20 mins travel time): </b>", formatC(colorData, big.mark = ","),
+                                 "<br/>","<b>Household + transport cost (% income): </b>",allcity[['ht_ami_seg']],
+                                 "<br/>","<b>Hiscpanic population (count): </b>",allcity[['Hispanic']])) %>%
       addLegend("bottomleft", pal=pal, values=colorData, title=colorBy,
                 layerId="colorLegend")
   })
 
-  
   ## Data Explorer ###########################################
   
   observe({
@@ -120,7 +120,6 @@ function(input, output, session) {
       filter(
         Tot_r_20 >= input$minTot_r_20,
         Tot_r_20 <= input$maxTot_r_20,
-        is.null(input$City_name) | City_name %in% input$City_name
       ) %>%
       mutate(Action = paste('<a class="go-map" href="" data-lat="', latitude, '" data-long="', longitude, '" data-city="', City_name, '"><i class="fa fa-crosshairs"></i></a>', sep=""))
     action <- DT::dataTableAjax(session, df, outputId = "citytable")

@@ -45,15 +45,10 @@ navbarPage("Los Angeles County", id="nav",
            
            tabPanel("Data explorer",
                     fluidRow(
-                      column(1,
-                             selectInput("cities", "Cities", c("All cities"=""), multiple=TRUE)
-                      )
-                    ),
-                    fluidRow(
-                      column(1,
+                      column(3,
                              numericInput("minTot_r_20", "Min accessibility", min=134684, max=769283, value=134684)
                       ),
-                      column(1,
+                      column(3,
                              numericInput("maxTot_r_20", "Max accessibility", min=134684, max=769283, value=769283)
                       )
                     ),
